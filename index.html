@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 20px;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 20px;
+            border: none;
+            transition: background-color 0.3s;
+            background-color: rgb(225, 225, 225);
+        }
+        .vowel {
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+        .vowel.special {
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+        .tone {
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+        .tone.special {
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+        .active {
+            background-color: #bbbbbb;
+        }
+        .disabled {
+            background-color: darkred;
+            pointer-events: none;
+        }
+        .flash {
+            animation: flash-green 0.3s;
+        }
+        @keyframes flash-green {
+            0% { background-color: #ccc; }
+            50% { background-color: rgb(0, 179, 0); }
+            100% { background-color: #ccc; }
+        }
+    </style>
+</head>
+<body>
+    <div style="display: flex;">
+        <div style="flex: 1;">
+            <button class="btn vowel" id="aBtn">a</button>
+            <button class="btn vowel" id="eBtn">e</button>
+            <button class="btn vowel" id="iBtn">i</button>
+            <button class="btn vowel" id="oBtn">o</button>
+            <button class="btn vowel" id="uBtn">u</button>
+            <button class="btn vowel special" id="nBtn">n</button>
+        </div>
+        <div style="flex: 1;">
+            <button class="btn tone" id="2Btn">2</button>
+            <button class="btn tone" id="3Btn">3</button>
+            <button class="btn tone" id="5Btn">5</button>
+            <button class="btn tone" id="7Btn">7</button>
+            <button class="btn tone" id="8Btn">8</button>
+        </div>
+    </div>
+
+    <script>
+        const vowels = ['a', 'e', 'i', 'o', 'u', 'n'];
+        const tones = ['2', '3', '5', '7', '8'];
+        const outputIndex = ['á', 'é', 'í', 'ó', 'ú', 'ń', 'à', 'è', 'ì', 'ò', 'ù', 'ǹ', 'â', 'ê', 'î', 'ô', 'û', 'n̂', 'ā', 'ē', 'ī', 'ō', 'ū', 'n̄', 'a̍', 'e̍', 'i̍', 'o̍', 'u̍', null];
+
+        let activeVowelBtn = null;
+        let activeToneBtn = null;
+
+        async function copyTone() {
+            if (activeVowelBtn && activeToneBtn) {
+                const vowelIndex = vowels.indexOf(activeVowelBtn.textContent);
+                const toneIndex = tones.indexOf(activeToneBtn.textContent);
+                const textToCopy = outputIndex[vowelIndex + 6 * toneIndex];
+
+                try {
+                    await navigator.clipboard.writeText(textToCopy);
+                    console.log('複製聲調：' + textToCopy);
+                } catch (err) {
+                    if (err) {
+                        document.execCommand(textToCopy);
+                    }
+                }
+
+                flashButton(activeVowelBtn);
+                flashButton(activeToneBtn);
+
+                activeVowelBtn.classList.remove('active');
+                activeToneBtn.classList.remove('active');
+
+                activeVowelBtn = null;
+                activeToneBtn = null;
+                updateButtonState();
+            }
+        }
+
+        function flashButton(btn) {
+            const rect = btn.getBoundingClientRect();
+            const top = rect.top;
+            const left = rect.left;
+
+            btn.classList.add('flash');
+            setTimeout(() => {
+                const element = document.elementFromPoint(left + rect.width / 2, top + rect.height / 2);
+                if (element) {
+                    element.classList.remove('flash');
+                }
+            }, 300);
+        }
+
+        function handleClick(event) {
+            const btn = event.target;
+            if (btn.classList.contains('active')) {
+                btn.classList.remove('active');
+                if (btn.classList.contains('vowel')) {
+                    activeVowelBtn = null;
+                } else {
+                    activeToneBtn = null;
+                }
+                return;
+            }
+
+            if (btn.classList.contains('vowel')) {
+                if (activeVowelBtn) {
+                    activeVowelBtn.classList.remove('active');
+                }
+                activeVowelBtn = btn;
+            } else {
+                if (activeToneBtn) {
+                    activeToneBtn.classList.remove('active');
+                }
+                activeToneBtn = btn;
+            }
+
+            btn.classList.add('active');
+            updateButtonState();
+            copyTone();
+        }
+
+        function updateButtonState() {
+            const nBtn = document.getElementById('nBtn');
+            const btn8 = document.getElementById('8Btn');
+
+            if (activeVowelBtn && activeVowelBtn.id === 'nBtn') {
+                btn8.classList.add('disabled');
+            } else {
+                btn8.classList.remove('disabled');
+            }
+
+            if (activeToneBtn && activeToneBtn.id === '8Btn') {
+                nBtn.classList.add('disabled');
+            } else {
+                nBtn.classList.remove('disabled');
+            }
+        }
+
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('click', handleClick);
+        });
+    </script>
+</body>
+</html>
